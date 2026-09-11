@@ -356,10 +356,21 @@ void TransferListWidget::setSelectedTorrentsLocation()
     auto *avoidSubfolderCheckBox = new QCheckBox(tr("Do not create subfolder if folder name matches torrent name"), fileDialog);
     avoidSubfolderCheckBox->setToolTip(tr("When saving, moving, or renaming, prevent creating a nested subfolder if the destination folder name already matches the torrent name."));
     avoidSubfolderCheckBox->setChecked(BitTorrent::Session::instance()->isAvoidDuplicateSubfolderEnabled());
-    if (auto *layout = qobject_cast<QGridLayout *>(fileDialog->layout()))
-        layout->addWidget(avoidSubfolderCheckBox, layout->rowCount(), 0, 1, -1);
 
-    connect(fileDialog, &QDialog::accepted, this, [this, fileDialog, avoidSubfolderCheckBox]()
+    auto *avoidSubfolderForSingleFilesCheckBox = new QCheckBox(tr("Do not create subfolder for single-file torrents"), fileDialog);
+    avoidSubfolderForSingleFilesCheckBox->setToolTip(tr("For torrents containing only a single file (even if enclosed in a folder), do not create a subfolder and use the file name as the torrent name."));
+    avoidSubfolderForSingleFilesCheckBox->setChecked(BitTorrent::Session::instance()->isAvoidSubfolderForSingleFilesEnabled());
+    avoidSubfolderForSingleFilesCheckBox->setEnabled(avoidSubfolderCheckBox->isChecked());
+    connect(avoidSubfolderCheckBox, &QCheckBox::toggled, avoidSubfolderForSingleFilesCheckBox, &QWidget::setEnabled);
+
+    if (auto *layout = qobject_cast<QGridLayout *>(fileDialog->layout()))
+    {
+        const int row = layout->rowCount();
+        layout->addWidget(avoidSubfolderCheckBox, row, 0, 1, -1);
+        layout->addWidget(avoidSubfolderForSingleFilesCheckBox, row + 1, 0, 1, -1);
+    }
+
+    connect(fileDialog, &QDialog::accepted, this, [this, fileDialog, avoidSubfolderCheckBox, avoidSubfolderForSingleFilesCheckBox]()
     {
         const QList<BitTorrent::Torrent *> torrents = getSelectedTorrents();
         if (torrents.isEmpty())
@@ -370,6 +381,7 @@ void TransferListWidget::setSelectedTorrentsLocation()
             return;
 
         BitTorrent::Session::instance()->setAvoidDuplicateSubfolderEnabled(avoidSubfolderCheckBox->isChecked());
+        BitTorrent::Session::instance()->setAvoidSubfolderForSingleFilesEnabled(avoidSubfolderForSingleFilesCheckBox->isChecked());
 
         // Actually move storage
         for (BitTorrent::Torrent *const torrent : torrents)

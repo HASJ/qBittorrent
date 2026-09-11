@@ -571,6 +571,7 @@ SessionImpl::SessionImpl(QObject *parent)
     , m_torrentStopCondition(BITTORRENT_SESSION_KEY(u"TorrentStopCondition"_s), Torrent::StopCondition::None)
     , m_torrentContentLayout(BITTORRENT_SESSION_KEY(u"TorrentContentLayout"_s), TorrentContentLayout::Original)
     , m_isAvoidDuplicateSubfolderEnabled(BITTORRENT_SESSION_KEY(u"AvoidDuplicateSubfolder"_s), false)
+    , m_isAvoidSubfolderForSingleFilesEnabled(BITTORRENT_SESSION_KEY(u"AvoidSubfolderForSingleFiles"_s), false)
     , m_isAppendExtensionEnabled(BITTORRENT_SESSION_KEY(u"AddExtensionToIncompleteFiles"_s), false)
     , m_isUnwantedFolderEnabled(BITTORRENT_SESSION_KEY(u"UseUnwantedFolder"_s), false)
     , m_refreshInterval(BITTORRENT_SESSION_KEY(u"RefreshInterval"_s), 1500)
@@ -2968,10 +2969,13 @@ bool SessionImpl::addTorrent_impl(const TorrentDescriptor &torrentDescr, const A
             filePaths = torrentInfo.filePaths();
             const Path originalRootFolder = Path::findRootFolder(filePaths);
             const bool avoidDuplicateSubfolder = addTorrentParams.avoidDuplicateSubfolder.value_or(isAvoidDuplicateSubfolderEnabled());
+            const bool avoidSubfolderForSingleFiles = addTorrentParams.avoidSubfolderForSingleFiles.value_or(isAvoidSubfolderForSingleFilesEnabled());
+            const bool isSingleFile = (torrentInfo.filesCount() == 1);
             if (avoidDuplicateSubfolder
                     && (loadTorrentParams.contentLayout == TorrentContentLayout::Original)
                     && !originalRootFolder.isEmpty()
-                    && (loadTorrentParams.savePath.filename().compare(originalRootFolder.toString(), Qt::CaseInsensitive) == 0))
+                    && ((loadTorrentParams.savePath.filename().compare(originalRootFolder.toString(), Qt::CaseInsensitive) == 0)
+                        || (avoidSubfolderForSingleFiles && isSingleFile)))
             {
                 loadTorrentParams.contentLayout = TorrentContentLayout::NoSubfolder;
             }
@@ -2994,12 +2998,21 @@ bool SessionImpl::addTorrent_impl(const TorrentDescriptor &torrentDescr, const A
         // initial renaming of torrent content and rename torrent accordingly
         if (loadTorrentParams.name.isEmpty())
         {
-            QString contentName = Path::findRootFolder(filePaths).toString();
-            if (contentName.isEmpty() && (filePaths.size() == 1))
-                contentName = filePaths.at(0).filename();
+            const bool avoidDuplicateSubfolder = addTorrentParams.avoidDuplicateSubfolder.value_or(isAvoidDuplicateSubfolderEnabled());
+            const bool avoidSubfolderForSingleFiles = addTorrentParams.avoidSubfolderForSingleFiles.value_or(isAvoidSubfolderForSingleFilesEnabled());
+            if (avoidDuplicateSubfolder && avoidSubfolderForSingleFiles && (filePaths.size() == 1))
+            {
+                loadTorrentParams.name = filePaths.at(0).filename();
+            }
+            else
+            {
+                QString contentName = Path::findRootFolder(filePaths).toString();
+                if (contentName.isEmpty() && (filePaths.size() == 1))
+                    contentName = filePaths.at(0).filename();
 
-            if (!contentName.isEmpty() && (contentName != torrentInfo.name()))
-                loadTorrentParams.name = contentName;
+                if (!contentName.isEmpty() && (contentName != torrentInfo.name()))
+                    loadTorrentParams.name = contentName;
+            }
         }
 
         const auto nativeIndexes = torrentInfo.nativeIndexes();
@@ -5683,6 +5696,17 @@ void SessionImpl::handleTorrentInfoHashChanged(TorrentImpl *torrent, const InfoH
 
 void SessionImpl::handleTorrentContentFileRenamed(TorrentImpl *torrent, const int index, const Path &oldFilePath)
 {
+    if (isAvoidSubfolderForSingleFilesEnabled() && (torrent->filesCount() == 1))
+    {
+        const Path newFilePath = torrent->filePath(index);
+        const QString oldFileStem = oldFilePath.removedExtension().filename();
+        if ((torrent->name().compare(oldFileStem, Qt::CaseInsensitive) == 0)
+                || (torrent->name().compare(oldFilePath.filename(), Qt::CaseInsensitive) == 0))
+        {
+            torrent->setName(newFilePath.filename());
+        }
+    }
+
     emit torrentContentFileRenamed(torrent, index, oldFilePath);
 }
 
@@ -6067,6 +6091,16 @@ bool SessionImpl::isAvoidDuplicateSubfolderEnabled() const
 void SessionImpl::setAvoidDuplicateSubfolderEnabled(const bool enabled)
 {
     m_isAvoidDuplicateSubfolderEnabled = enabled;
+}
+
+bool SessionImpl::isAvoidSubfolderForSingleFilesEnabled() const
+{
+    return (m_isAvoidDuplicateSubfolderEnabled && m_isAvoidSubfolderForSingleFilesEnabled);
+}
+
+void SessionImpl::setAvoidSubfolderForSingleFilesEnabled(const bool enabled)
+{
+    m_isAvoidSubfolderForSingleFilesEnabled = enabled;
 }
 
 // Read alerts sent by libtorrent session

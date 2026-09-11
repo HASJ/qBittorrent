@@ -259,6 +259,7 @@ AddNewTorrentDialog::AddNewTorrentDialog(const BitTorrent::TorrentDescriptor &to
     });
     connect(m_ui->contentLayoutComboBox, &QComboBox::currentIndexChanged, this, &AddNewTorrentDialog::contentLayoutChanged);
     connect(m_ui->avoidDuplicateSubfolderCheckBox, &QCheckBox::toggled, this, &AddNewTorrentDialog::avoidDuplicateSubfolderChanged);
+    connect(m_ui->avoidSubfolderForSingleFilesCheckBox, &QCheckBox::toggled, this, &AddNewTorrentDialog::avoidSubfolderForSingleFilesChanged);
     connect(m_ui->categoryComboBox, &QComboBox::currentIndexChanged, this, &AddNewTorrentDialog::categoryChanged);
     connect(m_ui->tagsEditButton, &QAbstractButton::clicked, this, [this]
     {
@@ -338,6 +339,7 @@ void AddNewTorrentDialog::setCurrentContext(const std::shared_ptr<Context> conte
     const QSignalBlocker startTorrentCheckBoxSignalBlocker {m_ui->startTorrentCheckBox};
     const QSignalBlocker contentLayoutComboBoxSignalBlocker {m_ui->contentLayoutComboBox};
     const QSignalBlocker avoidDuplicateSubfolderCheckBoxSignalBlocker {m_ui->avoidDuplicateSubfolderCheckBox};
+    const QSignalBlocker avoidSubfolderForSingleFilesCheckBoxSignalBlocker {m_ui->avoidSubfolderForSingleFilesCheckBox};
     const QSignalBlocker categoryComboBoxSignalBlocker {m_ui->categoryComboBox};
 
     const BitTorrent::AddTorrentParams &addTorrentParams = m_currentContext->torrentParams;
@@ -354,6 +356,9 @@ void AddNewTorrentDialog::setCurrentContext(const std::shared_ptr<Context> conte
             static_cast<int>(addTorrentParams.contentLayout.value_or(session->torrentContentLayout())));
     m_ui->avoidDuplicateSubfolderCheckBox->setChecked(
             addTorrentParams.avoidDuplicateSubfolder.value_or(session->isAvoidDuplicateSubfolderEnabled()));
+    m_ui->avoidSubfolderForSingleFilesCheckBox->setChecked(
+            addTorrentParams.avoidSubfolderForSingleFiles.value_or(session->isAvoidSubfolderForSingleFilesEnabled()));
+    m_ui->avoidSubfolderForSingleFilesCheckBox->setEnabled(m_ui->avoidDuplicateSubfolderCheckBox->isChecked());
     m_ui->sequentialCheckBox->setChecked(addTorrentParams.sequential);
     m_ui->firstLastCheckBox->setChecked(addTorrentParams.firstLastPiecePriority);
     m_ui->seedModeCheckBox->setChecked(addTorrentParams.seedMode);
@@ -452,6 +457,7 @@ void AddNewTorrentDialog::updateCurrentContext()
     addTorrentParams.stopCondition = m_ui->stopConditionComboBox->currentData().value<BitTorrent::Torrent::StopCondition>();
     addTorrentParams.contentLayout = static_cast<BitTorrent::TorrentContentLayout>(m_ui->contentLayoutComboBox->currentIndex());
     addTorrentParams.avoidDuplicateSubfolder = m_ui->avoidDuplicateSubfolderCheckBox->isChecked();
+    addTorrentParams.avoidSubfolderForSingleFiles = m_ui->avoidSubfolderForSingleFilesCheckBox->isChecked();
 
     addTorrentParams.sequential = m_ui->sequentialCheckBox->isChecked();
     addTorrentParams.firstLastPiecePriority = m_ui->firstLastCheckBox->isChecked();
@@ -822,7 +828,7 @@ void AddNewTorrentDialog::setupTreeview()
         return;
 
     // Set dialog title
-    setWindowTitle(torrentDescr.name());
+    updateWindowTitleForSingleFiles();
 
     // Set torrent information
     m_ui->labelCommentData->setText(Utils::Misc::parseHtmlLinks(torrentDescr.comment().toHtmlEscaped()));
@@ -909,7 +915,34 @@ void AddNewTorrentDialog::TMMChanged(int index)
 
 void AddNewTorrentDialog::avoidDuplicateSubfolderChanged(const bool checked)
 {
+    m_ui->avoidSubfolderForSingleFilesCheckBox->setEnabled(checked);
+    updateWindowTitleForSingleFiles();
     updateContentLayoutForAvoidDuplicateSubfolder(checked);
+}
+
+void AddNewTorrentDialog::avoidSubfolderForSingleFilesChanged([[maybe_unused]] const bool checked)
+{
+    updateWindowTitleForSingleFiles();
+    updateContentLayoutForAvoidDuplicateSubfolder(m_ui->avoidDuplicateSubfolderCheckBox->isChecked());
+}
+
+void AddNewTorrentDialog::updateWindowTitleForSingleFiles()
+{
+    if (!m_currentContext)
+        return;
+
+    const BitTorrent::TorrentDescriptor &torrentDescr = m_currentContext->torrentDescr;
+    if (torrentDescr.info().has_value()
+            && (torrentDescr.info()->filesCount() == 1)
+            && m_ui->avoidDuplicateSubfolderCheckBox->isChecked()
+            && m_ui->avoidSubfolderForSingleFilesCheckBox->isChecked())
+    {
+        setWindowTitle(torrentDescr.info()->filePaths().at(0).filename());
+    }
+    else
+    {
+        setWindowTitle(torrentDescr.name().isEmpty() ? tr("Magnet link") : torrentDescr.name());
+    }
 }
 
 void AddNewTorrentDialog::updateContentLayoutForAvoidDuplicateSubfolder(const bool checked)
@@ -917,15 +950,21 @@ void AddNewTorrentDialog::updateContentLayoutForAvoidDuplicateSubfolder(const bo
     if (!m_currentContext || !m_currentContext->torrentDescr.info().has_value())
         return;
 
-    const Path rootFolder = Path::findRootFolder(m_currentContext->torrentDescr.info()->filePaths());
+    const auto &torrentInfo = *m_currentContext->torrentDescr.info();
+    const Path rootFolder = Path::findRootFolder(torrentInfo.filePaths());
     if (rootFolder.isEmpty())
         return;
+
+    const bool avoidSingleFiles = checked && m_ui->avoidSubfolderForSingleFilesCheckBox->isChecked();
+    const bool isSingleFile = (torrentInfo.filesCount() == 1);
 
     const Path savePath = m_ui->savePath->selectedPath();
     const bool matches = (!savePath.isEmpty()
             && (savePath.filename().compare(rootFolder.toString(), Qt::CaseInsensitive) == 0));
 
-    if (checked && matches)
+    const bool shouldAvoid = checked && (matches || (avoidSingleFiles && isSingleFile));
+
+    if (shouldAvoid)
     {
         if (m_ui->contentLayoutComboBox->currentIndex() == static_cast<int>(BitTorrent::TorrentContentLayout::Original))
         {

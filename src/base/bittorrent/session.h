@@ -224,6 +224,8 @@ namespace BitTorrent
         virtual void setTorrentContentLayout(TorrentContentLayout value) = 0;
         virtual bool isAvoidDuplicateSubfolderEnabled() const = 0;
         virtual void setAvoidDuplicateSubfolderEnabled(bool enabled) = 0;
+        virtual bool isAvoidSubfolderForSingleFilesEnabled() const = 0;
+        virtual void setAvoidSubfolderForSingleFilesEnabled(bool enabled) = 0;
         virtual bool isTrackerEnabled() const = 0;
         virtual void setTrackerEnabled(bool enabled) = 0;
         virtual bool isAppendExtensionEnabled() const = 0;

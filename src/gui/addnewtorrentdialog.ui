@@ -376,6 +376,23 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <layout class="QHBoxLayout" name="avoidSubfolderForSingleFilesLayout">
+                <property name="leftMargin">
+                 <number>20</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="avoidSubfolderForSingleFilesCheckBox">
+                  <property name="toolTip">
+                   <string>For torrents containing only a single file (even if enclosed in a folder), do not create a subfolder and use the file name as the torrent name.</string>
+                  </property>
+                  <property name="text">
+                   <string>Do not create subfolder for single-file torrents</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
              </layout>
             </widget>
            </item>

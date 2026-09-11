@@ -47,6 +47,7 @@ const QString PARAM_STOPCONDITION = u"stop_condition"_s;
 const QString PARAM_SEEDMODE = u"seed_mode"_s;
 const QString PARAM_CONTENTLAYOUT = u"content_layout"_s;
 const QString PARAM_AVOIDDUPLICATESUBFOLDER = u"avoid_duplicate_subfolder"_s;
+const QString PARAM_AVOIDSUBFOLDERFORSINGLEFILES = u"avoid_subfolder_for_single_files"_s;
 const QString PARAM_AUTOTMM = u"use_auto_tmm"_s;
 const QString PARAM_UPLOADLIMIT = u"upload_limit"_s;
 const QString PARAM_DOWNLOADLIMIT = u"download_limit"_s;
@@ -129,6 +130,7 @@ BitTorrent::AddTorrentParams BitTorrent::parseAddTorrentParams(const QJsonObject
         .seedMode = seedModeValue.toBool(jsonObj.value(DEPRECATED_PARAM_SKIP_CHECKING).toBool()),
         .contentLayout = getOptionalEnum<TorrentContentLayout>(jsonObj, PARAM_CONTENTLAYOUT),
         .avoidDuplicateSubfolder = getOptionalBool(jsonObj, PARAM_AVOIDDUPLICATESUBFOLDER),
+        .avoidSubfolderForSingleFiles = getOptionalBool(jsonObj, PARAM_AVOIDSUBFOLDERFORSINGLEFILES),
         .useAutoTMM = getOptionalBool(jsonObj, PARAM_AUTOTMM),
         .uploadLimit = jsonObj.value(PARAM_UPLOADLIMIT).toInt(-1),
         .downloadLimit = jsonObj.value(PARAM_DOWNLOADLIMIT).toInt(-1),
@@ -183,6 +185,8 @@ QJsonObject BitTorrent::serializeAddTorrentParams(const AddTorrentParams &params
         jsonObj[PARAM_CONTENTLAYOUT] = Utils::String::fromEnum(*params.contentLayout);
     if (params.avoidDuplicateSubfolder)
         jsonObj[PARAM_AVOIDDUPLICATESUBFOLDER] = *params.avoidDuplicateSubfolder;
+    if (params.avoidSubfolderForSingleFiles)
+        jsonObj[PARAM_AVOIDSUBFOLDERFORSINGLEFILES] = *params.avoidSubfolderForSingleFiles;
     if (params.useAutoTMM)
         jsonObj[PARAM_AUTOTMM] = *params.useAutoTMM;
     if (params.useDownloadPath)
