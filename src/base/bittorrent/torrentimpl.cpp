@@ -516,7 +516,15 @@ void TorrentImpl::setSavePath(const Path &path)
 
     const Path basePath = m_session->useCategoryPathsInManualMode()
             ? m_session->categorySavePath(category()) : m_session->savePath();
-    const Path resolvedPath = (path.isAbsolute() ? path : (basePath / path));
+    Path resolvedPath = (path.isAbsolute() ? path : (basePath / path));
+
+    if (m_session->isAvoidDuplicateSubfolderEnabled())
+    {
+        const Path rootFolder = Path::findRootFolder(filePaths());
+        if (!rootFolder.isEmpty() && (resolvedPath.filename().compare(rootFolder.toString(), Qt::CaseInsensitive) == 0))
+            resolvedPath = resolvedPath.parentPath();
+    }
+
     if (resolvedPath == savePath())
         return;
 
@@ -545,7 +553,15 @@ void TorrentImpl::setDownloadPath(const Path &path)
 
     const Path basePath = m_session->useCategoryPathsInManualMode()
             ? m_session->categoryDownloadPath(category()) : m_session->downloadPath();
-    const Path resolvedPath = (path.isEmpty() || path.isAbsolute()) ? path : (basePath / path);
+    Path resolvedPath = (path.isEmpty() || path.isAbsolute()) ? path : (basePath / path);
+
+    if (m_session->isAvoidDuplicateSubfolderEnabled() && !resolvedPath.isEmpty())
+    {
+        const Path rootFolder = Path::findRootFolder(filePaths());
+        if (!rootFolder.isEmpty() && (resolvedPath.filename().compare(rootFolder.toString(), Qt::CaseInsensitive) == 0))
+            resolvedPath = resolvedPath.parentPath();
+    }
+
     if (resolvedPath == m_downloadPath)
         return;
 
@@ -1666,9 +1682,25 @@ void TorrentImpl::setName(const QString &name)
 {
     if (m_name != name)
     {
+        const QString oldName = m_name;
         m_name = name;
         deferredRequestResumeData();
         m_session->handleTorrentNameChanged(this);
+
+        if (m_session->isAvoidDuplicateSubfolderEnabled() && hasMetadata())
+        {
+            const Path oldRootFolder = Path::findRootFolder(filePaths());
+            if (!oldRootFolder.isEmpty() && (oldRootFolder.toString().compare(oldName, Qt::CaseInsensitive) == 0))
+            {
+                renameFolder(oldRootFolder, Path(name));
+            }
+            else if (oldRootFolder.isEmpty())
+            {
+                const Path curSavePath = savePath();
+                if (curSavePath.filename().compare(oldName, Qt::CaseInsensitive) == 0)
+                    setSavePath(curSavePath.parentPath() / Path(name));
+            }
+        }
     }
 }
 
@@ -2248,17 +2280,28 @@ void TorrentImpl::handleSaveResumeData(lt::add_torrent_params params)
 
         const auto &renamedFiles = m_ltAddTorrentParams.renamed_files;
         PathList filePaths = metadata.filePaths();
-        if (renamedFiles.empty() && (m_contentLayout != TorrentContentLayout::Original))
+        if (renamedFiles.empty())
         {
             const Path originalRootFolder = Path::findRootFolder(filePaths);
-            const auto originalContentLayout = (originalRootFolder.isEmpty()
-                    ? TorrentContentLayout::NoSubfolder : TorrentContentLayout::Subfolder);
-            if (m_contentLayout != originalContentLayout)
+            if (m_session->isAvoidDuplicateSubfolderEnabled()
+                    && (m_contentLayout == TorrentContentLayout::Original)
+                    && !originalRootFolder.isEmpty()
+                    && (savePath().filename().compare(originalRootFolder.toString(), Qt::CaseInsensitive) == 0))
             {
-                if (m_contentLayout == TorrentContentLayout::NoSubfolder)
-                    Path::stripRootFolder(filePaths);
-                else
-                    Path::addRootFolder(filePaths, filePaths.at(0).removedExtension());
+                m_contentLayout = TorrentContentLayout::NoSubfolder;
+            }
+
+            if (m_contentLayout != TorrentContentLayout::Original)
+            {
+                const auto originalContentLayout = (originalRootFolder.isEmpty()
+                        ? TorrentContentLayout::NoSubfolder : TorrentContentLayout::Subfolder);
+                if (m_contentLayout != originalContentLayout)
+                {
+                    if (m_contentLayout == TorrentContentLayout::NoSubfolder)
+                        Path::stripRootFolder(filePaths);
+                    else
+                        Path::addRootFolder(filePaths, filePaths.at(0).removedExtension());
+                }
             }
         }
 
@@ -2574,7 +2617,14 @@ void TorrentImpl::manageActualFilePaths()
 void TorrentImpl::adjustStorageLocation()
 {
     const Path downloadPath = this->downloadPath();
-    const Path targetPath = ((isFinished() || m_hasFinishedStatus || downloadPath.isEmpty()) ? savePath() : downloadPath);
+    Path targetPath = ((isFinished() || m_hasFinishedStatus || downloadPath.isEmpty()) ? savePath() : downloadPath);
+
+    if (m_session->isAvoidDuplicateSubfolderEnabled() && !targetPath.isEmpty())
+    {
+        const Path rootFolder = Path::findRootFolder(filePaths());
+        if (!rootFolder.isEmpty() && (targetPath.filename().compare(rootFolder.toString(), Qt::CaseInsensitive) == 0))
+            targetPath = targetPath.parentPath();
+    }
 
     if ((targetPath != actualStorageLocation()) || isMoveInProgress())
         moveStorage(targetPath, MoveStorageContext::AdjustCurrentLocation);

@@ -65,6 +65,7 @@ namespace BitTorrent
         QList<DownloadPriority> filePriorities; // used if TorrentInfo is set
         bool seedMode = false;
         std::optional<BitTorrent::TorrentContentLayout> contentLayout;
+        std::optional<bool> avoidDuplicateSubfolder;
         std::optional<bool> useAutoTMM;
         int uploadLimit = -1;
         int downloadLimit = -1;

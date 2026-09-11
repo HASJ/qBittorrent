@@ -366,6 +366,16 @@
                 </item>
                </layout>
               </item>
+              <item>
+               <widget class="QCheckBox" name="avoidDuplicateSubfolderCheckBox">
+                <property name="toolTip">
+                 <string>When saving, moving, or renaming, prevent creating a nested subfolder if the destination folder name already matches the torrent name.</string>
+                </property>
+                <property name="text">
+                 <string>Do not create subfolder if folder name matches torrent name</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>

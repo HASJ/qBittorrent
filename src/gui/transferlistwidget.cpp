@@ -31,9 +31,11 @@
 
 #include <algorithm>
 
+#include <QCheckBox>
 #include <QClipboard>
 #include <QDebug>
 #include <QFileDialog>
+#include <QGridLayout>
 #include <QHeaderView>
 #include <QList>
 #include <QMenu>
@@ -349,8 +351,15 @@ void TransferListWidget::setSelectedTorrentsLocation()
     auto *fileDialog = new QFileDialog(this, tr("Choose save path"), oldLocation.data());
     fileDialog->setAttribute(Qt::WA_DeleteOnClose);
     fileDialog->setFileMode(QFileDialog::Directory);
-    fileDialog->setOptions(QFileDialog::DontConfirmOverwrite | QFileDialog::ShowDirsOnly | QFileDialog::HideNameFilterDetails);
-    connect(fileDialog, &QDialog::accepted, this, [this, fileDialog]()
+    fileDialog->setOptions(QFileDialog::DontConfirmOverwrite | QFileDialog::ShowDirsOnly | QFileDialog::HideNameFilterDetails | QFileDialog::DontUseNativeDialog);
+
+    auto *avoidSubfolderCheckBox = new QCheckBox(tr("Do not create subfolder if folder name matches torrent name"), fileDialog);
+    avoidSubfolderCheckBox->setToolTip(tr("When saving, moving, or renaming, prevent creating a nested subfolder if the destination folder name already matches the torrent name."));
+    avoidSubfolderCheckBox->setChecked(BitTorrent::Session::instance()->isAvoidDuplicateSubfolderEnabled());
+    if (auto *layout = qobject_cast<QGridLayout *>(fileDialog->layout()))
+        layout->addWidget(avoidSubfolderCheckBox, layout->rowCount(), 0, 1, -1);
+
+    connect(fileDialog, &QDialog::accepted, this, [this, fileDialog, avoidSubfolderCheckBox]()
     {
         const QList<BitTorrent::Torrent *> torrents = getSelectedTorrents();
         if (torrents.isEmpty())
@@ -359,6 +368,8 @@ void TransferListWidget::setSelectedTorrentsLocation()
         const Path newLocation {fileDialog->selectedFiles().constFirst()};
         if (!newLocation.exists())
             return;
+
+        BitTorrent::Session::instance()->setAvoidDuplicateSubfolderEnabled(avoidSubfolderCheckBox->isChecked());
 
         // Actually move storage
         for (BitTorrent::Torrent *const torrent : torrents)
