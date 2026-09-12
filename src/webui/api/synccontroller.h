@@ -68,6 +68,7 @@ private:
     void onTorrentAdded(BitTorrent::Torrent *torrent);
     void onTorrentAboutToBeRemoved(BitTorrent::Torrent *torrent);
     void onTorrentCategoryChanged(BitTorrent::Torrent *torrent, const QString &oldCategory);
+    void onTorrentNameChanged(BitTorrent::Torrent *torrent);
     void onTorrentMetadataReceived(BitTorrent::Torrent *torrent);
     void onTorrentStopped(BitTorrent::Torrent *torrent);
     void onTorrentStarted(BitTorrent::Torrent *torrent);

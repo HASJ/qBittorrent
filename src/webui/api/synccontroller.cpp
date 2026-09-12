@@ -505,6 +505,7 @@ void SyncController::maindataAction()
         connect(btSession, &BitTorrent::Session::torrentAdded, this, &SyncController::onTorrentAdded);
         connect(btSession, &BitTorrent::Session::torrentAboutToBeRemoved, this, &SyncController::onTorrentAboutToBeRemoved);
         connect(btSession, &BitTorrent::Session::torrentCategoryChanged, this, &SyncController::onTorrentCategoryChanged);
+        connect(btSession, &BitTorrent::Session::torrentNameChanged, this, &SyncController::onTorrentNameChanged);
         connect(btSession, &BitTorrent::Session::torrentMetadataReceived, this, &SyncController::onTorrentMetadataReceived);
         connect(btSession, &BitTorrent::Session::torrentStopped, this, &SyncController::onTorrentStopped);
         connect(btSession, &BitTorrent::Session::torrentStarted, this, &SyncController::onTorrentStarted);
@@ -992,6 +993,11 @@ void SyncController::onTorrentAboutToBeRemoved(BitTorrent::Torrent *torrent)
 
 void SyncController::onTorrentCategoryChanged(BitTorrent::Torrent *torrent
         , [[maybe_unused]] const QString &oldCategory)
+{
+    m_updatedTorrents.insert(torrent->id());
+}
+
+void SyncController::onTorrentNameChanged(BitTorrent::Torrent *torrent)
 {
     m_updatedTorrents.insert(torrent->id());
 }

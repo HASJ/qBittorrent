@@ -438,6 +438,7 @@ void PluginsEngine::connectEventHandlers()
     connectEventHandler(&BT::Session::torrentSavePathChanged, "onTorrentSavePathChanged");
     connectEventHandler(&BT::Session::torrentSavingModeChanged, "onTorrentSavingModeChanged");
     connectEventHandler(&BT::Session::torrentCategoryChanged, "onTorrentCategoryChanged");
+    connectEventHandler(&BT::Session::torrentNameChanged, "onTorrentNameChanged");
     connectEventHandler(&BT::Session::torrentTagAdded, "onTorrentTagAdded");
     connectEventHandler(&BT::Session::torrentTagRemoved, "onTorrentTagRemoved");
     connectEventHandler(&BT::Session::torrentContentFileRenamed, "onTorrentContentFileRenamed");

@@ -1686,40 +1686,56 @@ qreal TorrentImpl::popularity() const
 
 void TorrentImpl::setName(const QString &name)
 {
-    if (m_name != name)
+    const QString oldDisplayName = this->name();
+    QString effectiveName = name;
+    Path newSingleFile;
+    Path oldSingleFile;
+    bool shouldRenameSingleFile = false;
+
+    if (m_session->isAvoidDuplicateSubfolderEnabled() && hasMetadata()
+            && m_session->isAvoidSubfolderForSingleFilesEnabled() && (filesCount() == 1))
     {
-        const QString oldName = m_name;
-        m_name = name;
+        oldSingleFile = filePath(0);
+        const Path parentDir = oldSingleFile.parentPath();
+        const QString inputExt = Path(effectiveName).extension();
+        const QString ext = oldSingleFile.extension();
+        const QString newFileName = (inputExt.isEmpty() && !ext.isEmpty())
+                ? (effectiveName + ext) : effectiveName;
+        newSingleFile = parentDir.isEmpty()
+                ? Path(newFileName) : (parentDir / Path(newFileName));
+        effectiveName = Path(newFileName).filename();
+        shouldRenameSingleFile = (newSingleFile != oldSingleFile);
+    }
+
+    if (m_name != effectiveName)
+    {
+        const QString oldName = m_name.isEmpty() ? oldDisplayName : m_name;
+        m_name = effectiveName;
         deferredRequestResumeData();
         m_session->handleTorrentNameChanged(this);
 
-        if (m_session->isAvoidDuplicateSubfolderEnabled() && hasMetadata())
+        if (shouldRenameSingleFile)
+        {
+            renameFile(0, newSingleFile);
+        }
+        else if (m_session->isAvoidDuplicateSubfolderEnabled() && hasMetadata())
         {
             const Path oldRootFolder = Path::findRootFolder(filePaths());
             if (!oldRootFolder.isEmpty() && (oldRootFolder.toString().compare(oldName, Qt::CaseInsensitive) == 0))
             {
-                renameFolder(oldRootFolder, Path(name));
+                renameFolder(oldRootFolder, Path(effectiveName));
             }
-            else if (oldRootFolder.isEmpty())
+            else if (oldRootFolder.isEmpty() && !isAutoTMMEnabled())
             {
-                if (m_session->isAvoidSubfolderForSingleFilesEnabled() && (filesCount() == 1))
-                {
-                    const Path oldFile = filePath(0);
-                    const QString inputExt = Path(name).extension();
-                    const Path newFile = (inputExt.isEmpty() && !oldFile.extension().isEmpty())
-                            ? Path(name + oldFile.extension()) : Path(name);
-                    m_name = newFile.filename();
-                    if (newFile != oldFile)
-                        renameFile(0, newFile);
-                }
-                else if (!isAutoTMMEnabled())
-                {
-                    const Path curLocation = actualStorageLocation();
-                    if (!curLocation.isEmpty() && (curLocation.filename().compare(oldName, Qt::CaseInsensitive) == 0))
-                        setSavePath(curLocation.parentPath() / Path(name));
-                }
+                const Path curLocation = actualStorageLocation();
+                if (!curLocation.isEmpty() && (curLocation.filename().compare(oldName, Qt::CaseInsensitive) == 0))
+                    setSavePath(curLocation.parentPath() / Path(effectiveName));
             }
         }
+    }
+    else if (shouldRenameSingleFile)
+    {
+        renameFile(0, newSingleFile);
     }
 }
 

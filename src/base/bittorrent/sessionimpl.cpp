@@ -5528,8 +5528,9 @@ void SessionImpl::handleTorrentShareLimitChanged(TorrentImpl *const)
     updateShareLimitsTimer();
 }
 
-void SessionImpl::handleTorrentNameChanged(TorrentImpl *const)
+void SessionImpl::handleTorrentNameChanged(TorrentImpl *const torrent)
 {
+    emit torrentNameChanged(torrent);
 }
 
 void SessionImpl::handleTorrentSavePathChanged(TorrentImpl *const torrent)
@@ -5699,12 +5700,7 @@ void SessionImpl::handleTorrentContentFileRenamed(TorrentImpl *torrent, const in
     if (isAvoidSubfolderForSingleFilesEnabled() && (torrent->filesCount() == 1))
     {
         const Path newFilePath = torrent->filePath(index);
-        const QString oldFileStem = oldFilePath.removedExtension().filename();
-        if ((torrent->name().compare(oldFileStem, Qt::CaseInsensitive) == 0)
-                || (torrent->name().compare(oldFilePath.filename(), Qt::CaseInsensitive) == 0))
-        {
-            torrent->setName(newFilePath.filename());
-        }
+        torrent->setName(newFilePath.filename());
     }
 
     emit torrentContentFileRenamed(torrent, index, oldFilePath);
