@@ -572,6 +572,7 @@ SessionImpl::SessionImpl(QObject *parent)
     , m_torrentContentLayout(BITTORRENT_SESSION_KEY(u"TorrentContentLayout"_s), TorrentContentLayout::Original)
     , m_isAvoidDuplicateSubfolderEnabled(BITTORRENT_SESSION_KEY(u"AvoidDuplicateSubfolder"_s), false)
     , m_isAvoidSubfolderForSingleFilesEnabled(BITTORRENT_SESSION_KEY(u"AvoidSubfolderForSingleFiles"_s), false)
+    , m_isRenameTorrentRenamesFileEnabled(BITTORRENT_SESSION_KEY(u"RenameTorrentRenamesFile"_s), false)
     , m_isAppendExtensionEnabled(BITTORRENT_SESSION_KEY(u"AddExtensionToIncompleteFiles"_s), false)
     , m_isUnwantedFolderEnabled(BITTORRENT_SESSION_KEY(u"UseUnwantedFolder"_s), false)
     , m_refreshInterval(BITTORRENT_SESSION_KEY(u"RefreshInterval"_s), 1500)
@@ -5697,7 +5698,7 @@ void SessionImpl::handleTorrentInfoHashChanged(TorrentImpl *torrent, const InfoH
 
 void SessionImpl::handleTorrentContentFileRenamed(TorrentImpl *torrent, const int index, const Path &oldFilePath)
 {
-    if (isAvoidSubfolderForSingleFilesEnabled() && (torrent->filesCount() == 1))
+    if (isRenameTorrentRenamesFileEnabled() && (torrent->filesCount() == 1))
     {
         const Path newFilePath = torrent->filePath(index);
         torrent->setName(newFilePath.filename());
@@ -6097,6 +6098,16 @@ bool SessionImpl::isAvoidSubfolderForSingleFilesEnabled() const
 void SessionImpl::setAvoidSubfolderForSingleFilesEnabled(const bool enabled)
 {
     m_isAvoidSubfolderForSingleFilesEnabled = enabled;
+}
+
+bool SessionImpl::isRenameTorrentRenamesFileEnabled() const
+{
+    return m_isRenameTorrentRenamesFileEnabled;
+}
+
+void SessionImpl::setRenameTorrentRenamesFileEnabled(const bool enabled)
+{
+    m_isRenameTorrentRenamesFileEnabled = enabled;
 }
 
 // Read alerts sent by libtorrent session

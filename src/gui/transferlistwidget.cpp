@@ -353,12 +353,12 @@ void TransferListWidget::setSelectedTorrentsLocation()
     fileDialog->setFileMode(QFileDialog::Directory);
     fileDialog->setOptions(QFileDialog::DontConfirmOverwrite | QFileDialog::ShowDirsOnly | QFileDialog::HideNameFilterDetails | QFileDialog::DontUseNativeDialog);
 
-    auto *avoidSubfolderCheckBox = new QCheckBox(tr("Do not create subfolder if folder name matches torrent name"), fileDialog);
-    avoidSubfolderCheckBox->setToolTip(tr("When saving, moving, or renaming, prevent creating a nested subfolder if the destination folder name already matches the torrent name."));
+    auto *avoidSubfolderCheckBox = new QCheckBox(tr("Do not create duplicate subfolder when folder matches torrent name"), fileDialog);
+    avoidSubfolderCheckBox->setToolTip(tr("When saving or moving a torrent into a folder with the same name as the torrent's root folder, store files directly in the destination folder instead of creating a nested duplicate subfolder."));
     avoidSubfolderCheckBox->setChecked(BitTorrent::Session::instance()->isAvoidDuplicateSubfolderEnabled());
 
-    auto *avoidSubfolderForSingleFilesCheckBox = new QCheckBox(tr("Do not create subfolder for single-file torrents"), fileDialog);
-    avoidSubfolderForSingleFilesCheckBox->setToolTip(tr("For torrents containing only a single file (even if enclosed in a folder), do not create a subfolder and use the file name as the torrent name."));
+    auto *avoidSubfolderForSingleFilesCheckBox = new QCheckBox(tr("Do not create enclosing folder for single-file torrents"), fileDialog);
+    avoidSubfolderForSingleFilesCheckBox->setToolTip(tr("For torrents containing only one file (even if packaged inside a root folder in the .torrent metadata), save the file directly in the save folder without creating an enclosing directory, and use the file name as the torrent display name."));
     avoidSubfolderForSingleFilesCheckBox->setChecked(BitTorrent::Session::instance()->isAvoidSubfolderForSingleFilesEnabled());
     avoidSubfolderForSingleFilesCheckBox->setEnabled(avoidSubfolderCheckBox->isChecked());
     connect(avoidSubfolderCheckBox, &QCheckBox::toggled, avoidSubfolderForSingleFilesCheckBox, &QWidget::setEnabled);

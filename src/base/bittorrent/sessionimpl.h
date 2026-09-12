@@ -209,6 +209,8 @@ namespace BitTorrent
         void setAvoidDuplicateSubfolderEnabled(bool enabled) override;
         bool isAvoidSubfolderForSingleFilesEnabled() const override;
         void setAvoidSubfolderForSingleFilesEnabled(bool enabled) override;
+        bool isRenameTorrentRenamesFileEnabled() const override;
+        void setRenameTorrentRenamesFileEnabled(bool enabled) override;
         bool isTrackerEnabled() const override;
         void setTrackerEnabled(bool enabled) override;
         bool isAppendExtensionEnabled() const override;
@@ -754,6 +756,7 @@ namespace BitTorrent
         CachedSettingValue<TorrentContentLayout> m_torrentContentLayout;
         CachedSettingValue<bool> m_isAvoidDuplicateSubfolderEnabled;
         CachedSettingValue<bool> m_isAvoidSubfolderForSingleFilesEnabled;
+        CachedSettingValue<bool> m_isRenameTorrentRenamesFileEnabled;
         CachedSettingValue<bool> m_isAppendExtensionEnabled;
         CachedSettingValue<bool> m_isUnwantedFolderEnabled;
         CachedSettingValue<int> m_refreshInterval;

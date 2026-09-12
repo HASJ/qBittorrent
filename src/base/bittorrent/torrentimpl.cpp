@@ -1692,8 +1692,7 @@ void TorrentImpl::setName(const QString &name)
     Path oldSingleFile;
     bool shouldRenameSingleFile = false;
 
-    if (m_session->isAvoidDuplicateSubfolderEnabled() && hasMetadata()
-            && m_session->isAvoidSubfolderForSingleFilesEnabled() && (filesCount() == 1))
+    if (m_session->isRenameTorrentRenamesFileEnabled() && hasMetadata() && (filesCount() == 1))
     {
         oldSingleFile = filePath(0);
         const Path parentDir = oldSingleFile.parentPath();
