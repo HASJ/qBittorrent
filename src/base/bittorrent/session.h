@@ -222,6 +222,12 @@ namespace BitTorrent
         virtual void setTorrentStopCondition(Torrent::StopCondition stopCondition) = 0;
         virtual TorrentContentLayout torrentContentLayout() const = 0;
         virtual void setTorrentContentLayout(TorrentContentLayout value) = 0;
+        virtual bool isAvoidDuplicateSubfolderEnabled() const = 0;
+        virtual void setAvoidDuplicateSubfolderEnabled(bool enabled) = 0;
+        virtual bool isAvoidSubfolderForSingleFilesEnabled() const = 0;
+        virtual void setAvoidSubfolderForSingleFilesEnabled(bool enabled) = 0;
+        virtual bool isRenameTorrentRenamesFileEnabled() const = 0;
+        virtual void setRenameTorrentRenamesFileEnabled(bool enabled) = 0;
         virtual bool isTrackerEnabled() const = 0;
         virtual void setTrackerEnabled(bool enabled) = 0;
         virtual bool isAppendExtensionEnabled() const = 0;
@@ -523,6 +529,7 @@ namespace BitTorrent
         void torrentAdded(Torrent *torrent);
         void duplicateTorrentDetected(const InfoHash &infoHash, Torrent *torrent, const QString &message);
         void torrentCategoryChanged(Torrent *torrent, const QString &oldCategory);
+        void torrentNameChanged(Torrent *torrent);
         void torrentFinished(Torrent *torrent);
         void torrentFinishedChecking(Torrent *torrent);
         void torrentMetadataReceived(Torrent *torrent);

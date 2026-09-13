@@ -1148,6 +1148,8 @@ void TorrentsController::addAction()
         .filePriorities = {},
         .seedMode = seedMode,
         .contentLayout = contentLayout,
+        .avoidDuplicateSubfolder = std::nullopt,
+        .avoidSubfolderForSingleFiles = std::nullopt,
         .useAutoTMM = autoTMM,
         .uploadLimit = upLimit,
         .downloadLimit = dlLimit,

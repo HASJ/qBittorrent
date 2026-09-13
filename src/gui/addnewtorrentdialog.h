@@ -81,6 +81,8 @@ private slots:
     void TMMChanged(int index);
     void categoryChanged(int index);
     void contentLayoutChanged();
+    void avoidDuplicateSubfolderChanged(bool checked);
+    void avoidSubfolderForSingleFilesChanged(bool checked);
 
 private:
     class TorrentContentAdaptor;
@@ -98,12 +100,15 @@ private:
     void saveTorrentFile();
     void showContentFilterContextMenu();
     void setContentFilterPattern();
+    void updateContentLayoutForAvoidDuplicateSubfolder(bool checked);
+    void updateWindowTitleForSingleFiles();
 
     Ui::AddNewTorrentDialog *m_ui = nullptr;
     std::unique_ptr<TorrentContentAdaptor> m_contentAdaptor;
     int m_savePathIndex = -1;
     int m_downloadPathIndex = -1;
     bool m_useDownloadPath = false;
+    bool m_isContentLayoutAutoSwitched = false;
     LineEdit *m_filterLine = nullptr;
 
     std::shared_ptr<Context> m_currentContext;

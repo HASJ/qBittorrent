@@ -579,6 +579,10 @@ void OptionsDialog::loadDownloadsTabOptions()
     m_ui->checkAdditionDialogFront->setChecked(pref->isAddNewTorrentDialogTopLevel());
 
     m_ui->contentLayoutComboBox->setCurrentIndex(static_cast<int>(session->torrentContentLayout()));
+    m_ui->checkAvoidDuplicateSubfolder->setChecked(session->isAvoidDuplicateSubfolderEnabled());
+    m_ui->checkAvoidSubfolderForSingleFiles->setChecked(session->isAvoidSubfolderForSingleFilesEnabled());
+    m_ui->checkAvoidSubfolderForSingleFiles->setEnabled(m_ui->checkAvoidDuplicateSubfolder->isChecked());
+    m_ui->checkRenameTorrentRenamesFile->setChecked(session->isRenameTorrentRenamesFileEnabled());
     m_ui->checkAddToQueueTop->setChecked(session->isAddTorrentToQueueTop());
     m_ui->checkAddStopped->setChecked(session->isAddTorrentStopped());
 
@@ -749,6 +753,10 @@ void OptionsDialog::loadDownloadsTabOptions()
     connect(m_ui->checkAdditionDialogFront, &QAbstractButton::toggled, this, &ThisType::enableApplyButton);
 
     connect(m_ui->contentLayoutComboBox, qComboBoxCurrentIndexChanged, this, &ThisType::enableApplyButton);
+    connect(m_ui->checkAvoidDuplicateSubfolder, &QAbstractButton::toggled, this, &ThisType::enableApplyButton);
+    connect(m_ui->checkAvoidDuplicateSubfolder, &QAbstractButton::toggled, m_ui->checkAvoidSubfolderForSingleFiles, &QWidget::setEnabled);
+    connect(m_ui->checkAvoidSubfolderForSingleFiles, &QAbstractButton::toggled, this, &ThisType::enableApplyButton);
+    connect(m_ui->checkRenameTorrentRenamesFile, &QAbstractButton::toggled, this, &ThisType::enableApplyButton);
 
     connect(m_ui->checkAddToQueueTop, &QAbstractButton::toggled, this, &ThisType::enableApplyButton);
     connect(m_ui->checkAddStopped, &QAbstractButton::toggled, this, &ThisType::enableApplyButton);
@@ -829,6 +837,9 @@ void OptionsDialog::saveDownloadsTabOptions() const
     pref->setAddNewTorrentDialogTopLevel(m_ui->checkAdditionDialogFront->isChecked());
 
     session->setTorrentContentLayout(static_cast<BitTorrent::TorrentContentLayout>(m_ui->contentLayoutComboBox->currentIndex()));
+    session->setAvoidDuplicateSubfolderEnabled(m_ui->checkAvoidDuplicateSubfolder->isChecked());
+    session->setAvoidSubfolderForSingleFilesEnabled(m_ui->checkAvoidSubfolderForSingleFiles->isChecked());
+    session->setRenameTorrentRenamesFileEnabled(m_ui->checkRenameTorrentRenamesFile->isChecked());
 
     session->setAddTorrentToQueueTop(m_ui->checkAddToQueueTop->isChecked());
     session->setAddTorrentStopped(addTorrentsStopped());

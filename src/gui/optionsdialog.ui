@@ -1057,6 +1057,50 @@
                 </layout>
                </item>
                <item>
+                <widget class="QCheckBox" name="checkAvoidDuplicateSubfolder">
+                 <property name="toolTip">
+                  <string>When saving or moving a torrent into a folder with the same name as the torrent's root folder, store files directly in the destination folder instead of creating a nested duplicate subfolder.</string>
+                 </property>
+                 <property name="text">
+                  <string>Do not create duplicate subfolder when folder matches torrent name</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayoutAvoidSubfolderForSingleFiles">
+                 <property name="leftMargin">
+                  <number>20</number>
+                 </property>
+                 <item>
+                  <widget class="QCheckBox" name="checkAvoidSubfolderForSingleFiles">
+                   <property name="toolTip">
+                    <string>For torrents containing only one file (even if packaged inside a root folder in the .torrent metadata), save the file directly in the save folder without creating an enclosing directory, and use the file name as the torrent display name.</string>
+                   </property>
+                   <property name="text">
+                    <string>Do not create enclosing folder for single-file torrents</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayoutRenameTorrentRenamesFile">
+                 <property name="leftMargin">
+                  <number>20</number>
+                 </property>
+                 <item>
+                  <widget class="QCheckBox" name="checkRenameTorrentRenamesFile">
+                   <property name="toolTip">
+                    <string>When renaming a single-file torrent in the transfer list, also rename the physical file on disk. Similarly, renaming the file in the Content tab updates the torrent's display name.</string>
+                   </property>
+                   <property name="text">
+                    <string>Rename actual file on disk when renaming single-file torrent</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="checkAddToQueueTop">
                  <property name="toolTip">
                   <string>The torrent will be added to the top of the download queue</string>

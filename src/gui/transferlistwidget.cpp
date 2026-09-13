@@ -31,9 +31,11 @@
 
 #include <algorithm>
 
+#include <QCheckBox>
 #include <QClipboard>
 #include <QDebug>
 #include <QFileDialog>
+#include <QGridLayout>
 #include <QHeaderView>
 #include <QList>
 #include <QMenu>
@@ -349,8 +351,26 @@ void TransferListWidget::setSelectedTorrentsLocation()
     auto *fileDialog = new QFileDialog(this, tr("Choose save path"), oldLocation.data());
     fileDialog->setAttribute(Qt::WA_DeleteOnClose);
     fileDialog->setFileMode(QFileDialog::Directory);
-    fileDialog->setOptions(QFileDialog::DontConfirmOverwrite | QFileDialog::ShowDirsOnly | QFileDialog::HideNameFilterDetails);
-    connect(fileDialog, &QDialog::accepted, this, [this, fileDialog]()
+    fileDialog->setOptions(QFileDialog::DontConfirmOverwrite | QFileDialog::ShowDirsOnly | QFileDialog::HideNameFilterDetails | QFileDialog::DontUseNativeDialog);
+
+    auto *avoidSubfolderCheckBox = new QCheckBox(tr("Do not create duplicate subfolder when folder matches torrent name"), fileDialog);
+    avoidSubfolderCheckBox->setToolTip(tr("When saving or moving a torrent into a folder with the same name as the torrent's root folder, store files directly in the destination folder instead of creating a nested duplicate subfolder."));
+    avoidSubfolderCheckBox->setChecked(BitTorrent::Session::instance()->isAvoidDuplicateSubfolderEnabled());
+
+    auto *avoidSubfolderForSingleFilesCheckBox = new QCheckBox(tr("Do not create enclosing folder for single-file torrents"), fileDialog);
+    avoidSubfolderForSingleFilesCheckBox->setToolTip(tr("For torrents containing only one file (even if packaged inside a root folder in the .torrent metadata), save the file directly in the save folder without creating an enclosing directory, and use the file name as the torrent display name."));
+    avoidSubfolderForSingleFilesCheckBox->setChecked(BitTorrent::Session::instance()->isAvoidSubfolderForSingleFilesEnabled());
+    avoidSubfolderForSingleFilesCheckBox->setEnabled(avoidSubfolderCheckBox->isChecked());
+    connect(avoidSubfolderCheckBox, &QCheckBox::toggled, avoidSubfolderForSingleFilesCheckBox, &QWidget::setEnabled);
+
+    if (auto *layout = qobject_cast<QGridLayout *>(fileDialog->layout()))
+    {
+        const int row = layout->rowCount();
+        layout->addWidget(avoidSubfolderCheckBox, row, 0, 1, -1);
+        layout->addWidget(avoidSubfolderForSingleFilesCheckBox, row + 1, 0, 1, -1);
+    }
+
+    connect(fileDialog, &QDialog::accepted, this, [this, fileDialog, avoidSubfolderCheckBox, avoidSubfolderForSingleFilesCheckBox]()
     {
         const QList<BitTorrent::Torrent *> torrents = getSelectedTorrents();
         if (torrents.isEmpty())
@@ -359,6 +379,9 @@ void TransferListWidget::setSelectedTorrentsLocation()
         const Path newLocation {fileDialog->selectedFiles().constFirst()};
         if (!newLocation.exists())
             return;
+
+        BitTorrent::Session::instance()->setAvoidDuplicateSubfolderEnabled(avoidSubfolderCheckBox->isChecked());
+        BitTorrent::Session::instance()->setAvoidSubfolderForSingleFilesEnabled(avoidSubfolderForSingleFilesCheckBox->isChecked());
 
         // Actually move storage
         for (BitTorrent::Torrent *const torrent : torrents)
